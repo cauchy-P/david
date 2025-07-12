@@ -26,7 +26,10 @@ def main() -> None:
         print("Invalid exponent input.")
         return
 
+    if num == 0 and exp <= 0:
+        return
     result = power(num, exp)
+
     # Ensure integers print without a trailing .0
     print(f"Result: {int(result) if result.is_integer() else result}")
 
