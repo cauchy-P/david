@@ -1,0 +1,8 @@
+Text: 안녕, 세상, Lang: ja
+Text: 안녕, 세상, Lang: ko
+Text:  konnichiwa, Lang: ja
+Text: 안녕하세요, Lang: ko
+Text: 안녕, Lang: ko
+Text: HI, Lang: en
+Text: Good, Lang: ko
+Text: 가나다라, Lang: en
