@@ -2,11 +2,19 @@ from flask import Flask, render_template, request
 from gtts import gTTS
 import base64
 from io import BytesIO
-
+import socket
 app = Flask(__name__)
 
 # 유효한 언어 목록 (보너스: lang 검증)
 VALID_LANGUAGES = ['ko', 'en', 'ja', 'es']
+@app.route('/')
+def home():
+    if app.debug:
+        hostname = '컴퓨터(인스턴스) : ' + socket.gethostname()
+    else:
+        hostname = ' '
+
+    return render_template('index.html', computername=hostname)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -47,5 +55,9 @@ def index():
     # GET: 폼 렌더링
     return render_template('index.html')
 
+@app.route('/menu')
+def menu():
+    return render_template('menu.html')
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=True)
