@@ -59,6 +59,10 @@ def index():
 def test1():
     return render_template('test1.html')
 
+
+@app.route("/test3")
+def test3():
+    return render_template('test3.html')
 @app.route('/menu')
 def menu():
     return render_template('menu.html')
