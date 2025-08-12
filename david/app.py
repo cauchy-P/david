@@ -55,9 +55,6 @@ def index():
     # GET: 폼 렌더링
     return render_template('index.html')
 
-@app.route("/test1")
-def test1():
-    return render_template('test1.html')
 
 
 @app.route("/test3")
