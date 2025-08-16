@@ -4,8 +4,8 @@ from datetime import datetime  # 추가: datetime import
 
 try:
     # 파일 경로를 명확히 지정
-    file_path = os.path.join('mars', 'mission_computer_main.log')
-    with open(file_path, 'r', encoding='utf-8') as file:
+    #file_path = os.path.join('mars', 'mission_computer_main.log')
+    with open("./mission_computer_main.log", 'r', encoding='utf-8') as file:
         content = file.read()
         print("Log file content:")
         print(content)
@@ -26,7 +26,7 @@ try:
     
     # JSON 파일로 저장
     try:
-        with open('mars/mission_computer_main.json', 'w', encoding='utf-8') as json_file:
+        with open('./mission_computer_main.json', 'w', encoding='utf-8') as json_file:
             json.dump(log_dict, json_file, ensure_ascii=False, indent=4)
         print("\nJSON file saved successfully.")
     except Exception as e:
