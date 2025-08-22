@@ -66,7 +66,7 @@ def worker(args):
             queue.put(passwd)
             elapsed = time.time() - start_time
             print(f'Candidate found by {process_name}: {passwd}, Attempts: {attempt}, Elapsed: {elapsed:.2f} s')
-        if attempt % 10000 == 0:
+        if attempt % 1000000 == 0:
             elapsed = time.time() - start_time
             print(f'{process_name} Attempts: {attempt}, Elapsed: {elapsed:.2f} s')
 
@@ -91,12 +91,15 @@ def unlock_zip():
     args_list = [(prefix, enc_header, expected, freq_chars, queue, start_time) for prefix in freq_chars]
     results = pool.map_async(worker, args_list)
     found = None
+    last_progress_time = 0
     while True:
         if not queue.empty():
             candidate = queue.get()
-            try:
-                with zipfile.ZipFile(zip_path) as zf:
-                    if zf.testzip(pwd=candidate.encode()) is None:
+            with zipfile.ZipFile(zip_path) as zf:
+                try:
+                    content = zf.read(info.filename, pwd=candidate.encode())
+                    computed_crc = binascii.crc32(content) & 0xffffffff
+                    if computed_crc == info.CRC:
                         found = candidate
                         elapsed = time.time() - start_time
                         print(f'Success! Password: {found}, Total time: {elapsed:.2f} s')
@@ -105,19 +108,20 @@ def unlock_zip():
                         break
                     else:
                         print(f'False positive: {candidate}, bad CRC')
-            except RuntimeError as e:
-                if 'Bad password' in str(e):
-                    print(f'False positive: {candidate}, bad password')
-                else:
-                    raise
-            except Exception as e:
-                print(f'Error testing {candidate}: {e}')
+                except RuntimeError as e:
+                    if 'Bad password' in str(e):
+                        print(f'False positive: {candidate}, bad password')
+                    else:
+                        raise
+                except Exception as e:
+                    print(f'Error testing {candidate}: {e}')
         if results.ready():
             break
         time.sleep(0.1)
         elapsed = time.time() - start_time
-        if int(elapsed) % 10 == 0:
+        if elapsed - last_progress_time >= 60:
             print(f'Progress check, Elapsed: {elapsed:.2f} s')
+            last_progress_time = elapsed
 
     pool.terminate()
     pool.join()
