@@ -3,14 +3,16 @@ import zipfile
 import time
 import zlib
 from itertools import product
-from multiprocessing import Process, Value, Lock, Array, current_process
+from multiprocessing import Process, Value, Lock, current_process, Queue, shared_memory
 import os
-import io
-def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_found, result_holder, lock):
+
+def try_passwords(shm_name, shm_size, target_file, charset, length, prefix_group, is_found, result_queue, lock):
     """
     각 프로세스에서 비밀번호 조합을 시도해보는 함수입니다.
     prefix_group에 해당하는 접두어들만 담당하며, 멀티프로세싱 환경에서 작동합니다.
     """
+    shm = shared_memory.SharedMemory(name=shm_name, size=shm_size)
+    zip_binary = bytes(shm.buf)
     zip_data = io.BytesIO(zip_binary)
     zip_obj = zipfile.ZipFile(zip_data)
     start_time = time.time()
@@ -18,11 +20,13 @@ def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_fou
 
     for prefix in prefix_group:
         if is_found.value:
+            shm.close()
             return  # 다른 프로세스에서 이미 찾았으면 종료
 
         # prefix 이후 뒷자리를 조합해서 전체 비밀번호 구성
         for tail in product(charset, repeat=length - 1):
             if is_found.value:
+                shm.close()
                 return  # 중간에라도 다른 프로세스가 찾았으면 바로 중단
 
             password = prefix + ''.join(tail)
@@ -36,10 +40,11 @@ def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_fou
                         # 다시 확인한 후 비밀번호 저장
                         if not is_found.value:
                             is_found.value = True
-                            result_holder.value = password.encode('ascii')
-                            elapsed = time.time() - start_time
-                            print(f'\n SUCCESS! password: {password}')
-                            print(f'elapsed time: {elapsed:.2f}seconds')
+                            result_queue.put(password)
+                    elapsed = time.time() - start_time
+                    print(f'\n SUCCESS! password: {password}')
+                    print(f'elapsed time: {elapsed:.2f}seconds')
+                    shm.close()
                     return
             except (RuntimeError, zipfile.BadZipFile, zlib.error):
                 # 비밀번호가 틀렸거나 압축이 깨졌을 경우 그냥 넘어감
@@ -50,6 +55,7 @@ def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_fou
                 elapsed = time.time() - start_time
                 print(f'{password} [{current_process().name}] {attempts}th attempt : {elapsed:.1f} seconds elapsed')
 
+    shm.close()
 
 def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) -> str | None:
     """
@@ -60,6 +66,10 @@ def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) 
     # zip 파일 전체를 메모리에 올려서 빠르게 접근할 수 있도록 처리
     with open(zip_path, 'rb') as f:
         zip_bytes = f.read()
+
+    # SharedMemory 생성
+    shm = shared_memory.SharedMemory(create=True, size=len(zip_bytes))
+    shm.buf[:] = zip_bytes
 
     # 테스트할 파일은 압축 파일 내 첫 번째 파일로 지정
     zip_file = zipfile.ZipFile(io.BytesIO(zip_bytes))
@@ -73,7 +83,7 @@ def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) 
 
     # 공통 데이터 구조 (공유 변수, 락)
     is_found = Value('b', False)          # 비밀번호를 찾았는지 여부
-    result_holder = Array('c', 7)         # 비밀번호 저장용 배열 (최대 6자리 + null)
+    result_queue = Queue()                # 비밀번호 저장용 큐
     lock = Lock()                         # 동기화용 락
 
     # 각 프로세스 실행
@@ -81,7 +91,7 @@ def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) 
     for i in range(process_count):
         p = Process(
             target=try_passwords,
-            args=(zip_bytes, file_to_test, charset, length, chunks[i], is_found, result_holder, lock),
+            args=(shm.name, shm.size, file_to_test, charset, length, chunks[i], is_found, result_queue, lock),
             name=f"P{i + 1}"
         )
         processes.append(p)
@@ -93,11 +103,15 @@ def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) 
 
     # 결과 반환
     if is_found.value:
-        return result_holder.value.decode('utf-8')
+        password = result_queue.get()
+        shm.close()
+        shm.unlink()
+        return password
     else:
         print('could not find password.')
+        shm.close()
+        shm.unlink()
         return None
-
 
 if __name__ == '__main__':
     # ZIP 파일 경로 설정 (과제 기준 파일명)

@@ -240,7 +240,7 @@ def run_single():
 
 if __name__ == '__main__':
     # 모드를 선택: 'multiprocess', 'multithread', 또는 'single'
-    mode = 'single'  # 여기서 변경하여 모드 선택 (또는 sys.argv로 동적 설정 가능)
+    mode = 'multiprocess'  # 여기서 변경하여 모드 선택 (또는 sys.argv로 동적 설정 가능)
 
     if mode == 'multiprocess':
         run_multiprocess()

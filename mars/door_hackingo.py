@@ -5,7 +5,8 @@ import zlib
 from itertools import product
 from multiprocessing import Process, Value, Lock, Array, current_process
 import os
-import io
+
+
 def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_found, result_holder, lock):
     """
     각 프로세스에서 비밀번호 조합을 시도해보는 함수입니다.
@@ -30,16 +31,16 @@ def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_fou
 
             try:
                 # 전체 압축을 푸는 대신, 파일 일부만 읽어서 비밀번호 확인
-                data = zip_obj.open(target_file, pwd=password.encode('ascii')).read(1)
+                data = zip_obj.open(target_file, pwd=password.encode('utf-8')).read(1)
                 if data:
                     with lock:
                         # 다시 확인한 후 비밀번호 저장
                         if not is_found.value:
                             is_found.value = True
-                            result_holder.value = password.encode('ascii')
+                            result_holder.value = password.encode('utf-8')
                             elapsed = time.time() - start_time
-                            print(f'\n SUCCESS! password: {password}')
-                            print(f'elapsed time: {elapsed:.2f}seconds')
+                            print(f'\n✅ [성공] 비밀번호: {password}')
+                            print(f'⏱️ 경과 시간: {elapsed:.2f}초')
                     return
             except (RuntimeError, zipfile.BadZipFile, zlib.error):
                 # 비밀번호가 틀렸거나 압축이 깨졌을 경우 그냥 넘어감
@@ -48,7 +49,7 @@ def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_fou
             # 진행 상황 출력 (10만 회마다)
             if attempts % 100000 == 0:
                 elapsed = time.time() - start_time
-                print(f'{password} [{current_process().name}] {attempts}th attempt : {elapsed:.1f} seconds elapsed')
+                print(f'[{current_process().name}] {attempts}회 시도 중... {elapsed:.1f}s 경과')
 
 
 def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) -> str | None:
@@ -95,7 +96,7 @@ def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) 
     if is_found.value:
         return result_holder.value.decode('utf-8')
     else:
-        print('could not find password.')
+        print('❌ 비밀번호를 찾지 못했습니다.')
         return None
 
 
