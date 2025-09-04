@@ -51,7 +51,7 @@ def try_passwords(zip_binary, target_file, charset, length, prefix_group, is_fou
                 print(f'{password} [{current_process().name}] {attempts}th attempt : {elapsed:.1f} seconds elapsed')
 
 
-def unlock_zip_password(zip_path: str, length: int = 6, process_count: int = 4) -> str | None:
+def unlock_zip(zip_path: str, length: int = 6, process_count: int = 4) -> str | None:
     """
     여러 프로세스를 사용해 ZIP 파일의 비밀번호를 브루트포스로 찾아내는 함수입니다.
     """
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     zip_path = './emergency_storage_key.zip'
 
     # CPU 코어 수에 따라 병렬 프로세스 수 결정
-    password = unlock_zip_password(zip_path, process_count=os.cpu_count() or 4)
+    password = unlock_zip(zip_path, process_count=os.cpu_count() or 4)
 
     if password:
         # 찾은 비밀번호를 파일로 저장
