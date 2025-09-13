@@ -5,7 +5,7 @@ arr = []
 for _ in range(n):
     arr.append(int(input()))
 arr.sort()
-lo = arr[1] - arr[0]
+lo = 1
 hi = arr[-1] - arr[0]
 res = 0
 while lo <= hi:
