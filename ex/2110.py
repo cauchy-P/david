@@ -18,7 +18,7 @@ while lo <= hi:
             cnt += 1
     if cnt >= c:
         res = mid
-        lo = mid + 1
+        lo = mid + 1 
     else:
         hi = mid - 1
 print(res)
