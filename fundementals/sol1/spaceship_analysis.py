@@ -5,15 +5,44 @@ from pathlib import Path
 import sys
 import warnings
 
-try:
-    locale.setlocale(locale.LC_ALL, '')
-except locale.Error:
-    os.environ['LC_ALL'] = 'C'
-    os.environ['LANG'] = 'C'
-    try:
-        locale.setlocale(locale.LC_ALL, 'C')
-    except locale.Error:
-        pass
+LOCALE_ENV_VARS = (
+    'LC_ALL',
+    'LANG',
+    'LC_CTYPE',
+    'LC_NUMERIC',
+    'LC_TIME',
+    'LC_COLLATE',
+    'LC_MONETARY',
+    'LC_MESSAGES',
+    'LC_PAPER',
+    'LC_MEASUREMENT',
+)
+
+
+def configure_locale() -> None:
+    """Set locale to a supported value to avoid GUI backend warnings."""
+    preferred_values = [os.environ.get('LC_ALL'), os.environ.get('LANG'), '']
+    for value in preferred_values:
+        if value is None:
+            continue
+        try:
+            locale.setlocale(locale.LC_ALL, value)
+        except locale.Error:
+            continue
+        else:
+            return
+
+    for fallback in ('C.UTF-8', 'C'):
+        try:
+            locale.setlocale(locale.LC_ALL, fallback)
+        except locale.Error:
+            continue
+        for variable in LOCALE_ENV_VARS:
+            os.environ[variable] = fallback
+        return
+
+
+configure_locale()
 
 warnings.filterwarnings(
     'ignore',
@@ -148,7 +177,11 @@ def plot_transport_by_age_group(train_df: pd.DataFrame) -> None:
         return
 
     prepared['Transported'] = prepared['Transported'].astype(bool)
-    grouped = prepared.groupby(['AgeGroup', 'Transported']).size().unstack(fill_value=0)
+    grouped = (
+        prepared.groupby(['AgeGroup', 'Transported'], observed=False)
+        .size()
+        .unstack(fill_value=0)
+    )
 
     ax = grouped.plot(kind='bar', figsize=(10, 6))
     ax.set_title('Transported counts by age group (train)')
@@ -171,7 +204,9 @@ def plot_age_distribution_by_destination(combined_df: pd.DataFrame) -> None:
         return
 
     grouped = (
-        prepared.groupby(['Destination', 'AgeGroup']).size().unstack(fill_value=0)
+        prepared.groupby(['Destination', 'AgeGroup'], observed=False)
+        .size()
+        .unstack(fill_value=0)
     )
 
     ax = grouped.T.plot(kind='bar', figsize=(12, 6))
