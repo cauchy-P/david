@@ -217,6 +217,7 @@ def demo_music_playlists():
     ]
 
     play_queue = linkedlist()
+    play_queue.insert('hello')
     for title in tracks:
         play_queue.insert(title)
 
@@ -233,8 +234,8 @@ def demo_music_playlists():
     print('Searching for "Take Five":', rotating_playlist.search('Take Five'))
 
     print('Rotating through the playlist:')
-    for _ in range(5):
-        print(rotating_playlist.get_next())
+    for _ in range(10):
+        print(rotating_playlist.get_next()) 
 
 
 if __name__ == '__main__':

@@ -124,7 +124,7 @@ def _inorder(node):
 
 
 if __name__ == '__main__':
-    tree = BinarySearchTree()
+    binarytree = BinarySearchTree()
     print('Binary Search Tree demo.')
     print('Commands: insert <value>, find <value>, delete <value>, list, size, exit')
 
@@ -146,11 +146,11 @@ if __name__ == '__main__':
             break
 
         if action == 'list':
-            print(_inorder(tree._root))
+            print(_inorder(binarytree._root))
             continue
 
         if action == 'size':
-            print(len(tree))
+            print(len(binarytree))
             continue
 
         if len(parts) != 2:
@@ -160,14 +160,14 @@ if __name__ == '__main__':
         value = _parse_value(parts[1])
 
         if action == 'insert':
-            if tree.insert(value):
+            if binarytree.insert(value):
                 print(f'Inserted {value}.')
             else:
                 print(f'{value} already exists.')
         elif action == 'find':
-            print('Found.' if tree.find(value) else 'Not found.')
+            print('Found.' if binarytree.find(value) else 'Not found.')
         elif action == 'delete':
-            if tree.delete(value):
+            if binarytree.delete(value):
                 print(f'Deleted {value}.')
             else:
                 print(f'{value} not present.')
